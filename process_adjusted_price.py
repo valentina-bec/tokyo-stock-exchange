@@ -63,5 +63,3 @@ if __name__ == "__main__":
     print(f'data columns: {adjusted_data.columns}')
     adjusted_data.to_csv(file)
 
-
-    # save new Dataframe in excel
