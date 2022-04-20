@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     #selected_codes = [8876, 6630, 7453, 7638]
     # iterate for each security code
-    for i in tqdm(data.SecuritiesCode):
+    for i in tqdm(data.SecuritiesCode.unique()):
         df = data.query('SecuritiesCode ==@i')
         adjusted_df = adjust_price(df)
         adjusted_data = pd.concat([adjusted_data, adjusted_df ], axis=0)
