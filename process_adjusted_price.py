@@ -39,6 +39,14 @@ def adjust_price(df):
     df['ad_Volume'] = df['Volume'] * df['CAF']
     df.drop('CAF', axis=1, inplace=True)
 
+    # adjust target
+
+    df.sort_values('Date')
+    df['ad_Close_1'] = df['ad_Close'].shift(-1)
+    df['ad_Close_2'] = df['ad_Close'].shift(-2)
+    df['ad_Target'] = (df['ad_Close_2']-df['ad_Close_1'])/df['ad_Close_1']
+    df.drop(['ad_Close_1', 'ad_Close_2'], axis=1, inplace=True)
+
     return df
 
 
@@ -51,7 +59,7 @@ if __name__ == "__main__":
 
     #selected_codes = [8876, 6630, 7453, 7638]
     # iterate for each security code
-    for i in tqdm(data.SecuritiesCode.unique()):
+    for i in tqdm(set(data.SecuritiesCode.unique())):
         df = data.query('SecuritiesCode ==@i')
         adjusted_df = adjust_price(df)
         adjusted_data = pd.concat([adjusted_data, adjusted_df ], axis=0)
