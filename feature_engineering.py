@@ -37,6 +37,12 @@ def fill_and_drop_na_values(df):
     # drop remaining na values
     stocks.dropna(axis=0)
 
+    # convert datetime 
+
+    stocks['Date'] = pd.to_datetime(stocks['Date']) 
+
+
+
     # init file to convert to csv
     #file = 'data/train_files/stock_prices_wo_na.csv'
 
@@ -92,6 +98,10 @@ def adjust_price(DataFrame):
         adjusted_df = adjust_price_slide(df)
         adjusted_data = pd.concat([adjusted_data, adjusted_df ], axis=0)
     
+    # convert data again to datetime
+    adjusted_data['Date'] = pd.to_datetime(adjusted_data['Date']) 
+
+
     return adjusted_data
 
 # imputing finances
