@@ -20,5 +20,5 @@ def plot_stock(df, Code, feature='Target', color='blue'):
     
 
 #create a dataframe for only one security code:
-def df_security_code(df, code):
+def df_security_code(df, code=8194):
 	return df.query('SecuritiesCode == @code')
