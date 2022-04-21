@@ -1,5 +1,6 @@
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 # missing values
 def missingValues(dataframe):
@@ -12,7 +13,12 @@ def missingValues(dataframe):
 
 
 # plot one stock
-def plot_stock(df, Code, feature='Target'):
+def plot_stock(df, Code, feature='Target', color='blue'):
     df = df.query('SecuritiesCode==@Code')
-    sns.lineplot(data=df, y=feature, x='Date', label=Code)
+    plt.figure(figsize=(20,5))
+    sns.lineplot(data=df, y=feature, x='Date', label=Code, color=color)
     
+
+#create a dataframe for only one security code:
+def df_security_code(df, code):
+	return df.query('SecuritiesCode == @code')

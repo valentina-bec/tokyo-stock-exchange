@@ -119,6 +119,9 @@ def fill_finances_knn(financial, prices):
         'ForecastOperatingProfit', 'ForecastOrdinaryProfit', 'ForecastProfit',
         'ForecastEarningsPerShare']
 
+    # drop ForecastRevision
+    financial = financial.query('TypeOfDocument != ["ForecastRevision", "ForecastRevision_REIT"]')
+
     financial = financial[liste] 
     financial = financial.replace('－', np.nan, regex = True )  
     financial_num = financial.apply(lambda x: pd.to_numeric(x, errors = 'ignore'))
