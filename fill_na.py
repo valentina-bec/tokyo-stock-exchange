@@ -1,7 +1,7 @@
 def fill_and_drop_na_values(df):
     
     # fill nan values for expected dividends with 0
-    df.ExpectedDividend.fillna(0)
+    df['ExpectedDividend'] = df.ExpectedDividend.fillna(0)
 
     # create empty dataframe with columns
     stocks = pd.DataFrame(columns=df.columns)
