@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 # missing values
 def missingValues(dataframe):
@@ -37,3 +38,13 @@ def print_shape(df):
 	print(f' Observations:   {human_format(df.shape[0])}')
 	print(f' Features:       {df.shape[1]}')
 	print(f' Feature Date:    {df["Date"].dtype}' )
+
+
+def plot_corr(df):
+	fig=plt.figure(figsize=(14,7))
+
+	matrix = np.triu(df.corr())
+
+	sns.heatmap(df.corr(), cmap='YlGnBu', annot=True, linewidth=0.6, mask=matrix)
+
+	plt.title('Correlation table', fontsize=18)	
