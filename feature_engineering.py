@@ -206,16 +206,16 @@ def price_new_features(df):
         df_code = df.query('SecuritiesCode ==@i').sort_values('Date')
         
         # features
-        logging.debug(' Features + SMA')
+        logging.debug('Features + SMA')
         features = ['ad_Close', 'ad_Open', 'ad_High' , 'ad_Low', 'ad_Volume']
         for feat in features:
             # lag 1
             name_l, lag_df =  features_lag(df_code, feat)
-            df[name_l] = lag_df
+            df_code[name_l] = lag_df
 
             # simple moving average
             name_sma , sma_df = SMA(df_code, feat)
-            df[name_sma] = sma_df
+            df_code[name_sma] = sma_df
 
         logging.debug(' RSI')
         # RSI: Relative Strengt index
@@ -232,7 +232,7 @@ def price_new_features(df):
 
 
         # weekly volatility
-        df_code['Volatility_week'] = volatility(df_code)
+        #df_code['Volatility_week'] = volatility(df_code)
 
         stocks = pd.concat([stocks, df_code], axis=0)
     
