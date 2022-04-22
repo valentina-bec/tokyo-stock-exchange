@@ -227,7 +227,7 @@ def price_new_features(df, verbose=False):
         df_code['Return'] = return_stock(df_code['ad_Close'])
         df_code['Log_Return'] = log_return(df_code['ad_Close'])
 
-        if verbose: ogging.debug(' MACD')
+        if verbose: logging.debug(' MACD')
         # MACD: Moving Average Convergence Divergence
         df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
 
