@@ -111,7 +111,7 @@ def adjust_price(DataFrame):
     return adjusted_data
 
 # create new features for stock prices
-def price_new_features(df):
+def price_new_features(df, verbose=False):
 
     # features lag 1
     def features_lag(df_code, feat, lag=1):
@@ -195,7 +195,8 @@ def price_new_features(df):
                     # merging query into final dataframe
                     new_df_code = pd.concat([new_df_code, t])
         # returning final dataframe
-        return new_df_code
+        return new_df_code['vol_week']
+
 
     stocks = pd.DataFrame(columns=df.columns)
 
@@ -206,7 +207,7 @@ def price_new_features(df):
         df_code = df.query('SecuritiesCode ==@i').sort_values('Date')
         
         # features
-        logging.debug('Features + SMA')
+        if verbose: logging.debug('Features + SMA')
         features = ['ad_Close', 'ad_Open', 'ad_High' , 'ad_Low', 'ad_Volume']
         for feat in features:
             # lag 1
@@ -217,22 +218,22 @@ def price_new_features(df):
             name_sma , sma_df = SMA(df_code, feat)
             df_code[name_sma] = sma_df
 
-        logging.debug(' RSI')
+        if verbose: logging.debug(' RSI')
         # RSI: Relative Strengt index
         df_code['RSI'] = RSI(df_code['ad_Close'])
 
-        logging.debug(' Return')
+        if verbose: logging.debug(' Return')
         # Return / default daily, options montly cummulativ
         df_code['Return'] = return_stock(df_code['ad_Close'])
         df_code['Log_Return'] = log_return(df_code['ad_Close'])
 
-        logging.debug(' MACD')
+        if verbose: ogging.debug(' MACD')
         # MACD: Moving Average Convergence Divergence
         df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
 
 
         # weekly volatility
-        #df_code['Volatility_week'] = volatility(df_code)
+        df_code['Volatility_week'] = volatility(df_code)
 
         stocks = pd.concat([stocks, df_code], axis=0)
     
