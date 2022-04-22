@@ -138,18 +138,15 @@ def price_new_features(df):
   
         return 100 - (100 / (1+rs))
 
+    def log_return(df_serie):
 
-    def return_stock(df_serie, type='D'):
-        if type == 'M': # does not work M has to be introduced
-            return df_serie.resample('M').ffill().pct_change()
+        df_code['logreturn'] = np.log(df_serie/df_serie.shift())
+        return df_code['logreturn']
+            
+    def return_stock(df_serie):
+        return df_serie/df_serie.shift()
+    
         
-        if type == 'D':
-            return df_serie.pct_change()
-
-        if type == 'cum_M':
-            return (df_serie.resample('M').ffill().pct_change() + 1).cumprod()
-
-
     def SMA(df_code, feat, period = 10): # period 5
         """ Simple moving average"""
         name = name = feat + "_sma" + str(period)
@@ -174,11 +171,38 @@ def price_new_features(df):
 
         return df['macd'],  df['macd_h'], df['macd_s']
 
+    def volatility(df_code):
+        # datetime
+
+        df_code['Date'] = pd.to_datetime(df_code['Date'])
+        #df_code['Day'] = df_code.Date.dt.day
+        #df_code['Month'] = df_code.Date.dt.month
+        df_code['Year'] = df_code.Date.dt.year
+        df_code['week'] = df_code.Date.dt.weekofyear
+
+    # initialize empty dataframe
+        new_df_code = pd.DataFrame(columns=df_code.columns)
+        # making columns for return and log return
+        #df_code['logreturn'] = np.log(df_code['ad_Close']/df_code['ad_Close'].shift())
+        #df['return'] = df['ad_Close']/df['ad_Close'].shift()
+        # looping thorugh each week of each year
+        for s in df_code.Year.unique():
+            for w in df_code.week.unique():
+                    # making query for specific week
+                    t = df_code.query('Year == @s and week == @w')
+                    # making column for the volatility
+                    t['vol_week'] = t['Log_Return'].std()*5**.5 *100
+                    # merging query into final dataframe
+                    new_df_code = pd.concat([new_df_code, t])
+        # returning final dataframe
+        return new_df_code
+
     stocks = pd.DataFrame(columns=df.columns)
 
     codes = df.SecuritiesCode.unique()
     # doing for loop for every security
     for i in tqdm(codes):
+
         df_code = df.query('SecuritiesCode ==@i').sort_values('Date')
         
         # features
@@ -200,11 +224,15 @@ def price_new_features(df):
         logging.debug(' Return')
         # Return / default daily, options montly cummulativ
         df_code['Return'] = return_stock(df_code['ad_Close'])
+        df_code['Log_Return'] = log_return(df_code['ad_Close'])
 
         logging.debug(' MACD')
         # MACD: Moving Average Convergence Divergence
         df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
 
+
+        # weekly volatility
+        df_code['Volatility_week'] = volatility(df_code)
 
         stocks = pd.concat([stocks, df_code], axis=0)
     
