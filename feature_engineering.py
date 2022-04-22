@@ -1,3 +1,4 @@
+#from msilib.schema import Feature
 import pandas as pd
 import sys
 from tqdm import tqdm
@@ -7,6 +8,8 @@ warnings.filterwarnings("ignore")
 from sklearn.impute import KNNImputer
 from datetime import *
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
+
 
 
 # fill nan values 
@@ -94,7 +97,7 @@ def adjust_price(DataFrame):
     adjusted_data = pd.DataFrame(columns = DataFrame.columns)
 
     for i in tqdm(codes):
-        df = DataFrame.query('SecuritiesCode ==@i')
+        df = DataFrame.query('SecuritiesCode ==@i').sort_values('Date')
         adjusted_df = adjust_price_slide(df)
         adjusted_data = pd.concat([adjusted_data, adjusted_df ], axis=0)
     
@@ -103,6 +106,115 @@ def adjust_price(DataFrame):
 
 
     return adjusted_data
+
+# create new features for stock prices
+def price_new_features(df):
+
+    # features lag 1
+    def features_lag(df_code, feat, lag=1):
+        name = feat + "_lag" + str(lag)
+        return name, df_code[str(feat)].shift(lag)
+    
+    def RSI(df_serie, periods=14, ema=True):
+        """Relative Strength Index"""
+        close_delta = df_serie.diff() # .dropna()
+
+        # Make two series: one for lower closes and one for higher closes
+        up = close_delta.clip(lower=0)
+        down = -1 * close_delta.clip(upper=0)
+
+        if ema == True: # exponential moving average
+            ma_up = up.ewm(com= periods - 1, adjust=True, min_periods = periods).mean()
+            ma_down = down.ewm(com = periods - 1, adjust=True, min_periods = periods).mean()
+        
+        else: # using moving average
+            ma_up = up.rolling(window = periods, adjust=False).mean()
+            ma_down = down.ewm(window = periods, adjust=False).mean()
+        
+        rs = ma_up / ma_down
+  
+        return 100 - (100 / (1+rs))
+
+
+    def return_stock(df_serie, type='D'):
+        if type == 'M':
+            return df_serie.resample('M').ffill().pct_change()
+        
+        if type == 'D':
+            return df_serie.pct_change()
+
+        if type == 'cum_M':
+            return (df_serie.resample('M').ffill().pct_change() + 1).cumprod()
+
+
+    def SMA(df_code, feat, period = 10): # period 5
+        """ Simple moving average"""
+        name = name = feat + "_sma" + str(period)
+        sma = df_code[feat].rolling(window=period).mean()
+        return name, sma
+
+    def MACD(df_code):
+        ema26 = df['ad_Close'].ewm(span=26, adjust=False, min_periods=26).mean()
+        ema12 = df['ad_Close'].ewm(span=12, adjust=False, min_periods=12).mean()
+
+        macd = ema12 - ema26
+
+        # Get the 9-Day EMA of the MACD for the Trigger line
+        macd_ema9 = macd.ewm(span=9, adjust=False, min_periods=9).mean()
+
+        # calculate the difference
+        macd_diff = macd - macd_ema9
+
+        df['macd'] = df.index.map(macd)
+        df['macd_h'] = df.index.map(macd_diff)
+        df['macd_s'] = df.index.map(macd_ema9)
+
+        return df['macd'],  df['macd_h'], df['macd_s']
+
+
+
+    stocks = pd.DataFrame(columns=df.columns)
+
+    codes = df.SecuritiesCode.unique()
+    # doing for loop for every security
+    for i in tqdm(codes):
+        df_code = df.query('SecuritiesCode ==@i').sort_values('Date')
+        
+        # features
+        features = ['ad_Close', 'ad_Open', 'ad_High' , 'ad_Low', 'ad_Volume']
+        for feat in features:
+            # lag 1
+            name_l, lag_df =  features_lag(df_code, feat)
+            df[name_l] = lag_df
+
+            # simple moving average
+            name_sma , sma_df = SMA(df_code, feat)
+            df[name_sma] = sma_df
+
+        # RSI: Relative Strengt index
+        df_code['RSI'] = RSI(df_code['ad_Close'])
+
+        # Return / default daily, options montly cummulativ
+        df_code['Return'] = return_stock(df_code['ad_Close'])
+
+        # MACD: Moving Average Convergence Divergence
+
+        df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MAC(df_code)
+
+# encode flag in stock prices
+def encode_flag(df, feature = "SupervisionFlag"):
+    """encode prices["SupervisionFlag"]
+
+    Args:
+        df_series (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    enc = LabelEncoder()
+    enc.fit(df[feature])
+    return enc.transform(df[feature])
+
 
 # imputing finances
 def fill_finances_knn(financial, prices):
