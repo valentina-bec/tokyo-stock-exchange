@@ -204,6 +204,12 @@ def price_new_features(df):
         logging.debug(' MACD')
         # MACD: Moving Average Convergence Divergence
         df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
+
+
+        stocks = pd.concat([stocks, df_code], axis=0)
+    
+    # convert data again to datetime
+    stocks['Date'] = pd.to_datetime(stocks['Date']) 
     
     return stocks
 

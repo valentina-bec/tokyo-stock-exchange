@@ -136,3 +136,9 @@ models/*
 
 #config file has sensitive data
 .mlflow_uri
+
+# files
+
+data.ipynb
+metric.ipynb 
+process_adjusted_price.py
