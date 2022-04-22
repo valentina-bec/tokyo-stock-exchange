@@ -10,6 +10,9 @@ from datetime import *
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 
 # fill nan values 
@@ -171,8 +174,6 @@ def price_new_features(df):
 
         return df['macd'],  df['macd_h'], df['macd_s']
 
-
-
     stocks = pd.DataFrame(columns=df.columns)
 
     codes = df.SecuritiesCode.unique()
@@ -181,6 +182,7 @@ def price_new_features(df):
         df_code = df.query('SecuritiesCode ==@i').sort_values('Date')
         
         # features
+        logging.debug(' Features + SMA')
         features = ['ad_Close', 'ad_Open', 'ad_High' , 'ad_Low', 'ad_Volume']
         for feat in features:
             # lag 1
@@ -191,15 +193,19 @@ def price_new_features(df):
             name_sma , sma_df = SMA(df_code, feat)
             df[name_sma] = sma_df
 
+        logging.debug(' RSI')
         # RSI: Relative Strengt index
         df_code['RSI'] = RSI(df_code['ad_Close'])
 
+        logging.debug(' Return')
         # Return / default daily, options montly cummulativ
         df_code['Return'] = return_stock(df_code['ad_Close'])
 
+        logging.debug(' MACD')
         # MACD: Moving Average Convergence Divergence
-
         df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
+    
+    return stocks
 
 # encode flag in stock prices
 def encode_flag(df, feature = "SupervisionFlag"):
