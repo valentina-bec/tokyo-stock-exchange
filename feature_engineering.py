@@ -137,7 +137,7 @@ def price_new_features(df):
 
 
     def return_stock(df_serie, type='D'):
-        if type == 'M':
+        if type == 'M': # does not work M has to be introduced
             return df_serie.resample('M').ffill().pct_change()
         
         if type == 'D':
@@ -199,7 +199,7 @@ def price_new_features(df):
 
         # MACD: Moving Average Convergence Divergence
 
-        df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MAC(df_code)
+        df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
 
 # encode flag in stock prices
 def encode_flag(df, feature = "SupervisionFlag"):
