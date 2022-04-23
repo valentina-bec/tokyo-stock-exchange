@@ -25,7 +25,7 @@ def df_security_code(df, code=8194):
 	return df.query('SecuritiesCode == @code')
 
 
-def print_shape(df):
+def print_shape(df, missing=True):
 	def human_format(num):
 		num = float('{:.3g}'.format(num))
 		magnitude = 0
@@ -38,7 +38,10 @@ def print_shape(df):
 	print(f' Observations:   {human_format(df.shape[0])}')
 	print(f' Features:       {df.shape[1]}')
 	print(f' Feature Date:    {df["Date"].dtype}' )
-
+	print(f'{"----"*10}')
+	print(f'{df.columns}')
+	print(f'{"----"*10}')
+	if missing: missingValues(df)
 
 def plot_corr(df):
 	fig=plt.figure(figsize=(14,7))
