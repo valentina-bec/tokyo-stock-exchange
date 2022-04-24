@@ -5,12 +5,22 @@ import numpy as np
 
 # missing values
 def missingValues(dataframe):
-	for i in range(len(dataframe.columns)):
-		# count number of rows with missing values
-		n_miss = dataframe[dataframe.columns[i]].isnull().sum()
+	# for a singel column
+	if isinstance(dataframe, type(pd.Series())):
+		n_miss = dataframe.isnull().sum()
 		perc = n_miss / dataframe.shape[0] * 100
-		print(dataframe.columns[i] + ' missing Values: %d (%.1f%%)' % (n_miss, perc))
-    
+		print(' missing Values: %d (%.1f%%)' % (n_miss, perc))
+	
+	else: 
+		cols = dataframe.columns
+
+
+		for i in range(len(cols)):
+			# count number of rows with missing values
+			n_miss = dataframe[dataframe.columns[i]].isnull().sum()
+			perc = n_miss / dataframe.shape[0] * 100
+			print(dataframe.columns[i] + ' missing Values: %d (%.1f%%)' % (n_miss, perc))
+		
 
 
 # plot one stock
