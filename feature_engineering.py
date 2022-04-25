@@ -16,14 +16,15 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 # fill nan values 
-def fill_and_drop_na_values(df):
+def fill_and_drop_na_values(df, drop=True):
     """forward fill for each security code
 
     Args:
         df (): price_strock.csv
     """
     # fill nan values for expected dividends with 0
-    df.ExpectedDividend.fillna(0)
+    if 'ExpectedDividend' in set(df.columns):
+        df.ExpectedDividend.fillna(0)
 
     # create empty dataframe with columns
     stocks = pd.DataFrame(columns=df.columns)
@@ -32,7 +33,7 @@ def fill_and_drop_na_values(df):
     for i in tqdm(df.SecuritiesCode.unique()):
     
         # creating query from dataframe with all rows for one stock
-        query = df.query('SecuritiesCode == @i')
+        query = df.query('SecuritiesCode == @i').sort_values('Date')
 
         # applying forward fill on query
         query = query.ffill()
@@ -41,7 +42,7 @@ def fill_and_drop_na_values(df):
         stocks = pd.concat([stocks, query], axis=0)
     
     # drop remaining na values
-    stocks.dropna(axis=0)
+    if drop: stocks.dropna(axis=0)
 
     # convert datetime 
 
@@ -79,7 +80,8 @@ def adjust_price(DataFrame):
 
         for x in prices:
             #df['ad_' + str(x)] = df[x] / df['CAF']
-            df.loc[:,'ad_' + str(x)]  = df[x] / df['CAF']
+            name = 'ad_' + str(x)
+            df[name]  = df[x] / df['CAF']
         
         # adjust volume
         df['ad_Volume'] = df['Volume'] * df['CAF']
@@ -108,15 +110,16 @@ def adjust_price(DataFrame):
     adjusted_data['Date'] = pd.to_datetime(adjusted_data['Date']) 
 
 
-    return adjusted_data
+    return adjusted_data.drop(['Close', 'Open', 'High' , 'Low', 'Volume'], axis=1)
 
 # create new features for stock prices
-def price_new_features(df):
+def price_new_features(df, verbose=False):
 
     # features lag 1
     def features_lag(df_code, feat, lag=1):
         name = feat + "_lag" + str(lag)
-        return name, df_code[str(feat)].shift(lag)
+        df[name] = df_code[str(feat)].shift(lag)
+        return name, df[name]
     
     def RSI(df_serie, periods=14, ema=True):
         """Relative Strength Index"""
@@ -195,7 +198,8 @@ def price_new_features(df):
                     # merging query into final dataframe
                     new_df_code = pd.concat([new_df_code, t])
         # returning final dataframe
-        return new_df_code
+        return new_df_code['vol_week']
+
 
     stocks = pd.DataFrame(columns=df.columns)
 
@@ -206,27 +210,27 @@ def price_new_features(df):
         df_code = df.query('SecuritiesCode ==@i').sort_values('Date')
         
         # features
-        logging.debug(' Features + SMA')
+        if verbose: logging.debug('Features + SMA')
         features = ['ad_Close', 'ad_Open', 'ad_High' , 'ad_Low', 'ad_Volume']
         for feat in features:
             # lag 1
             name_l, lag_df =  features_lag(df_code, feat)
-            df[name_l] = lag_df
+            df_code[name_l] = lag_df
 
             # simple moving average
             name_sma , sma_df = SMA(df_code, feat)
-            df[name_sma] = sma_df
+            df_code[name_sma] = sma_df
 
-        logging.debug(' RSI')
+        if verbose: logging.debug(' RSI')
         # RSI: Relative Strengt index
         df_code['RSI'] = RSI(df_code['ad_Close'])
 
-        logging.debug(' Return')
+        if verbose: logging.debug(' Return')
         # Return / default daily, options montly cummulativ
         df_code['Return'] = return_stock(df_code['ad_Close'])
         df_code['Log_Return'] = log_return(df_code['ad_Close'])
 
-        logging.debug(' MACD')
+        if verbose: logging.debug(' MACD')
         # MACD: Moving Average Convergence Divergence
         df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
 
@@ -304,3 +308,35 @@ def fill_finances_knn(financial, prices):
     df_pred = df_pred[pred_final]
 
     return df_pred
+
+
+def new_features_financial(filled_finances):
+    sec_codes = filled_finances.SecuritiesCode.unique()
+
+    filled_financial_feat = pd.DataFrame(columns=filled_finances.columns)
+
+    for i in tqdm(sec_codes):
+        # select a security code
+        aktie = filled_finances.query('SecuritiesCode == @i')
+        aktie.sort_values('Date')
+        # create new features:
+        aktie['margin'] = aktie['Profit'] / aktie['NetSales'] * 100
+        aktie['profit_ttm'] = aktie['Profit'].shift(3) + aktie['Profit'].shift(2) + aktie['Profit'].shift(1) + aktie['Profit']
+        aktie['rev_ttm'] = aktie['NetSales'].shift(3) + aktie['NetSales'].shift(2) + aktie['NetSales'].shift(1) + aktie['NetSales']
+        aktie['win_quarter_growth'] = (aktie['Profit'] - aktie['Profit'].shift(1)) / aktie['Profit'].shift(1) * 100
+        aktie['rev_quarter_growth'] = (aktie['NetSales'] - aktie['NetSales'].shift(1)) / aktie['NetSales'].shift(1) * 100
+        aktie['win_yoy_growth'] = (aktie['Profit'] - aktie['Profit'].shift(4)) / aktie['Profit'].shift(4) * 100
+        aktie['rev_yoy_growth'] = (aktie['NetSales'] - aktie['NetSales'].shift(4)) / aktie['NetSales'].shift(4) * 100
+        aktie['win_ttm_growth'] = (aktie['profit_ttm'] - aktie['profit_ttm'].shift(1)) / aktie['profit_ttm'].shift(1) * 100
+        aktie['rev_ttm_growth'] = (aktie['rev_ttm'] - aktie['rev_ttm'].shift(1)) / aktie['rev_ttm'].shift(1) * 100
+        aktie['margin_growth'] = (aktie['margin'] - aktie['margin'].shift()) / aktie['margin'].shift() * 100
+        
+        # fill
+        aktie = aktie.ffill()
+        #aktie = aktie.dropna(axis=0)
+
+        filled_financial_feat  = pd.concat([filled_financial_feat , aktie])
+
+        filled_financial_feat['Date'] = pd.to_datetime(filled_financial_feat['Date']) 
+    
+    return filled_financial_feat    
