@@ -31,7 +31,7 @@ def missingValues(dataframe):
 
 # plot one stock
 def plot_stock(df, Code, feature='Target', color='blue'):
-    df = df.query('SecuritiesCode==@Code')
+    if Code: df = df.query('SecuritiesCode==@Code')
     plt.figure(figsize=(20,5))
     sns.lineplot(data=df, y=feature, x='Date', label=Code, color=color)
     
