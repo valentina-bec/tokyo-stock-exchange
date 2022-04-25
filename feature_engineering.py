@@ -168,11 +168,17 @@ def price_new_features(df, verbose=False):
         # calculate the difference
         macd_diff = macd - macd_ema9
 
-        df['macd'] = df.index.map(macd)
-        df['macd_h'] = df.index.map(macd_diff)
-        df['macd_s'] = df.index.map(macd_ema9)
+        #df['macd'] = df.index.map(macd)
+        #df['macd_h'] = df.index.map(macd_diff)
+        #df['macd_s'] = df.index.map(macd_ema9)
 
-        return df['macd'],  df['macd_h'], df['macd_s']
+        #return df['macd'],  df['macd_h'], df['macd_s']
+
+        df['MACD'] = df.index.map(macd)
+        df['MACD_h'] = df.index.map(macd_diff)
+        df['MACD_s'] = df.index.map(macd_ema9)
+
+        return df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s']
 
     def volatility(df_code):
         # datetime
