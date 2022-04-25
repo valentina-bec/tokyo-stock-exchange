@@ -279,7 +279,11 @@ def fill_finances_knn(financial, prices):
     financial = financial.query('TypeOfDocument != ["ForecastRevision", "ForecastRevision_REIT"]')
 
     financial = financial[liste] 
-    financial = financial.replace('－', np.nan, regex = True )  
+    for col in financial.columns:
+        if financial[col].nunique() > 1:
+            financial[col] = financial[col].replace('－', np.nan, regex = True )  
+        else: 
+            financial[col] = financial[col].replace('－', 0, regex = True )      
     financial_num = financial.apply(lambda x: pd.to_numeric(x, errors = 'ignore'))
 
     # Selecting only matching Codes from financial data
@@ -305,7 +309,7 @@ def fill_finances_knn(financial, prices):
 
     # Selecting only Columns without NaN
     pred_final = ['Date', 'Day', 'Month', 'Year', 'SecuritiesCode', 'Profit', 'NetSales']
-    df_pred = df_pred[pred_final]
+    df_pred = df_pred[pred_final]   
 
     return df_pred
 
@@ -338,5 +342,10 @@ def new_features_financial(filled_finances):
         filled_financial_feat  = pd.concat([filled_financial_feat , aktie])
 
         filled_financial_feat['Date'] = pd.to_datetime(filled_financial_feat['Date']) 
+
+    # create key on financial : RowId
+    filled_financial_feat .SecuritiesCode = filled_financial_feat .SecuritiesCode.astype(int)
+    
+    filled_financial_feat ['RowId'] = filled_financial_feat .Date.dt.strftime('%Y%m%d').astype(str) + '_' + filled_financial_feat .SecuritiesCode.astype(str)
     
     return filled_financial_feat    
