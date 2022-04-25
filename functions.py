@@ -5,8 +5,9 @@ import numpy as np
 
 # missing values
 def missingValues(dataframe):
+	missing = {}
 	# for a singel column
-	if isinstance(dataframe, type(pd.Series())):
+	if isinstance(dataframe, type(pd.Series({'a': 1, 'b': 2, 'c': 3}))):
 		n_miss = dataframe.isnull().sum()
 		perc = n_miss / dataframe.shape[0] * 100
 		print(' missing Values: %d (%.1f%%)' % (n_miss, perc))
@@ -19,7 +20,12 @@ def missingValues(dataframe):
 			# count number of rows with missing values
 			n_miss = dataframe[dataframe.columns[i]].isnull().sum()
 			perc = n_miss / dataframe.shape[0] * 100
-			print(dataframe.columns[i] + ' missing Values: %d (%.1f%%)' % (n_miss, perc))
+			missing[dataframe.columns[i]] = (n_miss, round(perc,2))
+			#print(dataframe.columns[i] + ' missing Values: %d (%.1f%%)' % (n_miss, perc))
+		
+		missing_df = pd.DataFrame(missing).T
+		missing_df.columns = ['N_missing', 'Percentage' ]
+		display(missing_df.sort_values('Percentage', ascending=False))
 		
 
 
