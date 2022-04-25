@@ -67,3 +67,5 @@ def plot_corr(df):
 	sns.heatmap(df.corr(), cmap='YlGnBu', annot=True, linewidth=0.6, mask=matrix)
 
 	plt.title('Correlation table', fontsize=18)	
+
+
