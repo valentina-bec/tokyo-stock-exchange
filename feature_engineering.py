@@ -24,7 +24,7 @@ def fill_and_drop_na_values(df, drop=True):
     """
     # fill nan values for expected dividends with 0
     if 'ExpectedDividend' in set(df.columns):
-        df.ExpectedDividend.fillna(0)
+        df['ExpectedDividend'] = df.ExpectedDividend.fillna(0)
 
     # create empty dataframe with columns
     stocks = pd.DataFrame(columns=df.columns)
@@ -110,7 +110,7 @@ def adjust_price(DataFrame):
     adjusted_data['Date'] = pd.to_datetime(adjusted_data['Date']) 
 
 
-    return adjusted_data.drop(['Close', 'Open', 'High' , 'Low', 'Volume'], axis=1)
+    return adjusted_data.drop(['Close', 'Open', 'High' , 'Low', 'Volume', 'Target'], axis=1)
 
 # create new features for stock prices
 def price_new_features(df, verbose=False):
@@ -143,8 +143,8 @@ def price_new_features(df, verbose=False):
 
     def log_return(df_serie):
 
-        df_code['logreturn'] = np.log(df_serie/df_serie.shift())
-        return df_code['logreturn']
+        df_code['Log_Return'] = np.log(df_serie/df_serie.shift())
+        return df_code['Log_Return']
             
     def return_stock(df_serie):
         return df_serie/df_serie.shift()
@@ -184,15 +184,15 @@ def price_new_features(df, verbose=False):
         # datetime
 
         df_code['Date'] = pd.to_datetime(df_code['Date'])
-        #df_code['Day'] = df_code.Date.dt.day
-        #df_code['Month'] = df_code.Date.dt.month
+        df_code['Day'] = df_code.Date.dt.day
+        df_code['Month'] = df_code.Date.dt.month
         df_code['Year'] = df_code.Date.dt.year
         df_code['week'] = df_code.Date.dt.weekofyear
 
     # initialize empty dataframe
         new_df_code = pd.DataFrame(columns=df_code.columns)
         # making columns for return and log return
-        #df_code['logreturn'] = np.log(df_code['ad_Close']/df_code['ad_Close'].shift())
+        #df_code['Log_Return'] = np.log(df_code['ad_Close']/df_code['ad_Close'].shift())
         #df['return'] = df['ad_Close']/df['ad_Close'].shift()
         # looping thorugh each week of each year
         for s in df_code.Year.unique():
@@ -206,6 +206,22 @@ def price_new_features(df, verbose=False):
         # returning final dataframe
         return new_df_code['vol_week']
 
+    def seasonality(df_code, feature):
+        df_code[f'logprice_' + feature] = np.log(df_code[feature])
+
+        #df_code = df_code.reset_index()
+        df_code[f'trend_' + feature] = df_code[feature].rolling(30).mean()
+        df_code[f'detrend_' + feature] = df_code[feature] - df_code[f'trend_' + feature]
+
+        test = df_code[f'detrend_' + feature].groupby(df_code.index//30).mean()
+        test = test.to_list()
+        test = test + 29 * test
+
+        test = test[ : len(df_code)]
+        df_code[f'season_' + feature] = test
+        df_code[f'error_' + feature] = df_code[feature] - df_code[f'trend_' + feature] - df_code[f'season_' + feature]
+
+        return df_code
 
     stocks = pd.DataFrame(columns=df.columns)
 
@@ -227,6 +243,10 @@ def price_new_features(df, verbose=False):
             name_sma , sma_df = SMA(df_code, feat)
             df_code[name_sma] = sma_df
 
+            if feat == 'ad_Volume':
+                continue 
+            df_code = seasonality(df_code, feature=feat)
+
         if verbose: logging.debug(' RSI')
         # RSI: Relative Strengt index
         df_code['RSI'] = RSI(df_code['ad_Close'])
@@ -236,9 +256,9 @@ def price_new_features(df, verbose=False):
         df_code['Return'] = return_stock(df_code['ad_Close'])
         df_code['Log_Return'] = log_return(df_code['ad_Close'])
 
-        if verbose: logging.debug(' MACD')
+        if verbose: logging.debug(' macd')
         # MACD: Moving Average Convergence Divergence
-        df_code['MACD'] , df_code['MACD_h'], df_code['MACD_s'] = MACD(df_code)
+        df_code['macd'] , df_code['macd_h'], df_code['macd_s'] = MACD(df_code)
 
 
         # weekly volatility
@@ -321,6 +341,7 @@ def fill_finances_knn(financial, prices):
 
 
 def new_features_financial(filled_finances):
+
     sec_codes = filled_finances.SecuritiesCode.unique()
 
     filled_financial_feat = pd.DataFrame(columns=filled_finances.columns)
@@ -331,14 +352,14 @@ def new_features_financial(filled_finances):
         aktie.sort_values('Date')
         # create new features:
         aktie['margin'] = aktie['Profit'] / aktie['NetSales'] * 100
-        aktie['profit_ttm'] = aktie['Profit'].shift(3) + aktie['Profit'].shift(2) + aktie['Profit'].shift(1) + aktie['Profit']
-        aktie['rev_ttm'] = aktie['NetSales'].shift(3) + aktie['NetSales'].shift(2) + aktie['NetSales'].shift(1) + aktie['NetSales']
+        # aktie['profit_ttm'] = aktie['Profit'].shift(3) + aktie['Profit'].shift(2) + aktie['Profit'].shift(1) + aktie['Profit']
+        # aktie['rev_ttm'] = aktie['NetSales'].shift(3) + aktie['NetSales'].shift(2) + aktie['NetSales'].shift(1) + aktie['NetSales']
         aktie['win_quarter_growth'] = (aktie['Profit'] - aktie['Profit'].shift(1)) / aktie['Profit'].shift(1) * 100
         aktie['rev_quarter_growth'] = (aktie['NetSales'] - aktie['NetSales'].shift(1)) / aktie['NetSales'].shift(1) * 100
-        aktie['win_yoy_growth'] = (aktie['Profit'] - aktie['Profit'].shift(4)) / aktie['Profit'].shift(4) * 100
-        aktie['rev_yoy_growth'] = (aktie['NetSales'] - aktie['NetSales'].shift(4)) / aktie['NetSales'].shift(4) * 100
-        aktie['win_ttm_growth'] = (aktie['profit_ttm'] - aktie['profit_ttm'].shift(1)) / aktie['profit_ttm'].shift(1) * 100
-        aktie['rev_ttm_growth'] = (aktie['rev_ttm'] - aktie['rev_ttm'].shift(1)) / aktie['rev_ttm'].shift(1) * 100
+        # aktie['win_yoy_growth'] = (aktie['Profit'] - aktie['Profit'].shift(4)) / aktie['Profit'].shift(4) * 100
+        # aktie['rev_yoy_growth'] = (aktie['NetSales'] - aktie['NetSales'].shift(4)) / aktie['NetSales'].shift(4) * 100
+        # aktie['win_ttm_growth'] = (aktie['profit_ttm'] - aktie['profit_ttm'].shift(1)) / aktie['profit_ttm'].shift(1) * 100
+        # aktie['rev_ttm_growth'] = (aktie['rev_ttm'] - aktie['rev_ttm'].shift(1)) / aktie['rev_ttm'].shift(1) * 100
         aktie['margin_growth'] = (aktie['margin'] - aktie['margin'].shift()) / aktie['margin'].shift() * 100
         
         # fill
@@ -355,3 +376,14 @@ def new_features_financial(filled_finances):
     filled_financial_feat ['RowId'] = filled_financial_feat .Date.dt.strftime('%Y%m%d').astype(str) + '_' + filled_financial_feat .SecuritiesCode.astype(str)
     
     return filled_financial_feat    
+
+
+def price_financial_function(df_price, df_financial):
+    price_financial = pd.merge(df_price, df_financial, how='left', on='RowId', suffixes=[None, '_f_'])
+    fea_to_remove = ['Date_f_', 'Day_f_', 'Month_f_', 'Year_f_', 'SecuritiesCode_f_','Log_Return', 'AdjustmentFactor']
+
+    return price_financial.drop(fea_to_remove, axis=1, inplace=True)
+
+
+
+# Todo : Null fill ExpectedDividend
