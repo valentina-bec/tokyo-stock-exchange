@@ -5,12 +5,28 @@ import numpy as np
 
 # missing values
 def missingValues(dataframe):
-	for i in range(len(dataframe.columns)):
-		# count number of rows with missing values
-		n_miss = dataframe[dataframe.columns[i]].isnull().sum()
+	missing = {}
+	# for a singel column
+	if isinstance(dataframe, type(pd.Series({'a': 1, 'b': 2, 'c': 3}))):
+		n_miss = dataframe.isnull().sum()
 		perc = n_miss / dataframe.shape[0] * 100
-		print(dataframe.columns[i] + ' missing Values: %d (%.1f%%)' % (n_miss, perc))
-    
+		print(' missing Values: %d (%.1f%%)' % (n_miss, perc))
+	
+	else: 
+		cols = dataframe.columns
+
+
+		for i in range(len(cols)):
+			# count number of rows with missing values
+			n_miss = dataframe[dataframe.columns[i]].isnull().sum()
+			perc = n_miss / dataframe.shape[0] * 100
+			missing[dataframe.columns[i]] = (n_miss, round(perc,2))
+			#print(dataframe.columns[i] + ' missing Values: %d (%.1f%%)' % (n_miss, perc))
+		
+		missing_df = pd.DataFrame(missing).T
+		missing_df.columns = ['N_missing', 'Percentage' ]
+		display(missing_df.sort_values('Percentage', ascending=False))
+		
 
 
 # plot one stock
@@ -21,7 +37,7 @@ def plot_stock(df, Code, feature='Target', color='blue'):
     
 
 #create a dataframe for only one security code:
-def df_security_code(df, code=8194):
+def df_security_code(df, code=7203): # Toyotagit a
 	return df.query('SecuritiesCode == @code')
 
 
@@ -51,3 +67,5 @@ def plot_corr(df):
 	sns.heatmap(df.corr(), cmap='YlGnBu', annot=True, linewidth=0.6, mask=matrix)
 
 	plt.title('Correlation table', fontsize=18)	
+
+
