@@ -25,7 +25,8 @@ def missingValues(dataframe):
 		
 		missing_df = pd.DataFrame(missing).T
 		missing_df.columns = ['N_missing', 'Percentage' ]
-		display(missing_df.sort_values('Percentage', ascending=False))
+		only_missing = missing_df.query('Percentage > 0')
+		display(only_missing.sort_values('Percentage', ascending=False))
 		
 
 
