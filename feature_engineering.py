@@ -9,6 +9,8 @@ from sklearn.impute import KNNImputer
 from datetime import *
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from statsmodels.tsa.seasonal import seasonal_decompose
+
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -203,19 +205,37 @@ def price_new_features(df, verbose=False):
     def seasonality(df_code, feature):
         df_code[f'logprice_' + feature] = np.log(df_code[feature])
 
-        #df_code = df_code.reset_index()
-        df_code[f'trend_' + feature] = df_code[feature].rolling(30).mean()
-        df_code[f'detrend_' + feature] = df_code[feature] - df_code[f'trend_' + feature]
 
-        test = df_code[f'detrend_' + feature].groupby(df_code.index//30).mean()
-        test = test.to_list()
-        test = test + 29 * test
+        decomposition = seasonal_decompose(x=df_code[feature], 
+                                   model='additive',
+                                   period=30)
 
-        test = test[ : len(df_code)]
-        df_code[f'season_' + feature] = test
-        df_code[f'error_' + feature] = df_code[feature] - df_code[f'trend_' + feature] - df_code[f'season_' + feature]
+        df_code[f'detrend_' + feature] = decomposition.observed
+        df_code[f'trend_' + feature] = decomposition.trend
+        df_code[f'season_' + feature] = decomposition.seasonal
+        df_code[f'error_' + feature] = decomposition.resid
 
         return df_code
+
+    def transform_date(df):
+        date_time = pd.to_datetime(df['Date'], format='%Y-%m.%d')
+        timestamp_s = date_time.map(pd.Timestamp.timestamp)
+
+        day = 24*60*60
+        week = 7*day
+        month = 30.4167*day
+        year = (365.2425)*day
+
+        df['Day_sin'] = np.sin(timestamp_s * (2 * np.pi / day))
+        df['Day_cos'] = np.cos(timestamp_s * (2 * np.pi / day))
+
+        df['Month_sin'] = np.sin(timestamp_s * (2 * np.pi / month))
+        df['Month_cos'] = np.cos(timestamp_s * (2 * np.pi / month))
+
+        df['Year_sin'] = np.sin(timestamp_s * (2 * np.pi / year))
+        df['Year_cos'] = np.cos(timestamp_s * (2 * np.pi / year)) 
+
+        return df   
 
     stocks = pd.DataFrame(columns=df.columns)
 
@@ -257,6 +277,7 @@ def price_new_features(df, verbose=False):
 
         # weekly volatility
         df_code['Volatility_week'] = volatility(df_code)
+        df_code = transform_date(df_code)
 
         stocks = pd.concat([stocks, df_code], axis=0)
     
@@ -295,8 +316,9 @@ def fill_finances_knn(financial, prices):
         'ForecastOperatingProfit', 'ForecastOrdinaryProfit', 'ForecastProfit',
         'ForecastEarningsPerShare']
 
+
     # drop ForecastRevision
-    financial = financial.query('TypeOfDocument != ["ForecastRevision", "ForecastRevision_REIT"]')
+    financial = financial.query('TypeOfDocument != ["ForecastRevision", "ForecastRevision_REIT", "NumericalCorrection"]')
 
     financial = financial[liste] 
     for col in financial.columns:
