@@ -117,3 +117,4 @@ process_adjusted_price.py
 
 #ignore all data
 data/*
+my_logs/*

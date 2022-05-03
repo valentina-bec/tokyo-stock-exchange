@@ -59,8 +59,8 @@ def print_shape(df, missing=True):
 	print(f'{"----"*10}')
 	if missing: missingValues(df)
 
-def plot_corr(df):
-	fig=plt.figure(figsize=(14,7))
+def plot_corr(df, x=14, y=7):
+	fig=plt.figure(figsize=(x,y))
 
 	matrix = np.triu(df.corr())
 

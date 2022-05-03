@@ -12,3 +12,10 @@ parsenvy
 black
 tqdm
 holidays_jp
+
+
+pydot
+tensorflow-macos
+tensorflow-metal
+Keras
+tensorflow-hub
