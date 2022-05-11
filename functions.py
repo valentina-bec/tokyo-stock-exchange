@@ -81,6 +81,7 @@ def date_range(df, date='Date'):
 
 
 def plot_stock(df, code, feature='Close'):
-    df = df.query('SecuritiesCode==@Code')
+    df = df.query('SecuritiesCode==@code')
     plt.figure(figsize=(20,5))
     sns.lineplot(data=df, y=feature, x='Date', label=code)
+    plt.title(f'{code} {feature}')
