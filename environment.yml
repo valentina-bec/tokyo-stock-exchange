@@ -11,3 +11,17 @@ dependencies:
   - flake8=3.8.4
   - black=20.8b1
   - python=3.8.5
+  - tqdm
+  - tensorflow
+  - h5py==3.6.0 
+  - jupyterlab==3.2.5
+  - keras==2.8.0
+  - Keras-Preprocessing==1.1.2
+  - matplotlib==3.5.1
+  - numpy==1.22.0
+  - pandas==1.4.1
+  - scikit-learn==1.0.2
+  - scipy==1.7.3
+  - seaborn==0.11.2
+  - tensorflow-hub==0.12.0
+  - tqdm==4.63.1

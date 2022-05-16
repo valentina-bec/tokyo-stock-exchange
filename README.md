@@ -1,3 +1,72 @@
+# JPX Tokyo Stock Exchange Prediction
+
+Success in any financial market requires one to identify solid investments. When a stock or derivative is undervalued, it makes sense to buy. If it's overvalued, perhaps it's time to sell. While these finance decisions were historically made manually by professionals, technology has ushered in new opportunities for retail investors. Data scientists, specifically, may be interested to explore quantitative trading, where decisions are executed programmatically based on predictions from trained models.
+
+
+## Data
+
+The data and challenge were kindly privided by Kaggle: 
+
+[jpx-tokyo-stock-exchange-prediction](https://www.kaggle.com/competitions/jpx-tokyo-stock-exchange-prediction/overview)
+
+This dataset contains historic data for a variety of Japanese stocks and options. Your challenge is to predict the future returns of the stocks. 
+
+### Exploratory data analysis 
+- stock_list.csv
+- train_files/financials.csv
+- train_files/stock_prices.csv
+
+## Data Preprocessing and feature engineering
+### Data cleaning 
+Data cleaning and filling is a process that is used to clean up and fill in missing data in data sets. This process can be used to improve the accuracy of data sets, as well as to improve the efficiency of analysis processes. Missing values were fill with forward fill method. 
+- prices:  
+    - Adjusted Price with AdjustmentFactor
+    - remove seasonality
+### New features
+the original data includes essential indicators such as closing, open, high and low prices, as well as volume. With new features we introduce more sophisticated technical indicators:
+
+Prices: 
+- Prices lag: these are the prices with lag 1, i.e., from the previous day/period.
+
+- RSI: relative strength index
+- Log Return 
+- SMA: simple moving average
+- MACD: Moving Average Convergence/Divergence
+- Volatility
+
+for our predictions we include the financial data including as well new features:
+
+- Profit growth
+- Sales growth
+- Margin
+- Margin growth
+
+files : <br>
+[preprocessing.ipynb](preprocessing.ipynb)<br>
+[feature_engineering.py](feature_engineering.py)
+
+
+## Models
+
+### VAR
+
+
+### ARIMA
+
+
+### ANN
+
+- model training: [ann_model](modeling/ann_model.ipynb) <br>
+- predictions:    [ann_predict](modeling/ann_predict.ipynb) <br>
+- evaluation:     [ann_evaluate](modeling/ann_evaluate.ipynb) <br>
+
+
+<br>
+<br>
+
+
+<!--
+
 # ds-modeling-pipeline
 
 Here you find a Skeleton project for building a simple model in a python script or notebook and log the results on MLFlow.
@@ -10,7 +79,7 @@ There are two ways to do it:
     The [main script](modeling/train.py) will go through exactly the same process as the jupyter notebook and also log the hyperparameters with MLflow
 
 Data used is the [coffee quality dataset](https://github.com/jldbc/coffee-quality-database).
-
+-->
 ## Requirements:
 
 - pyenv with Python: 3.9.4
@@ -32,6 +101,8 @@ pip install -r requirements_dev.txt
 ```
 
 The `requirements.txt` file contains the libraries needed for deployment.. of model or dashboard .. thus no jupyter or other libs used during development.
+
+<!--
 
 The MLFLOW URI should **not be stored on git**, you have two options, to save it locally in the `.mlflow_uri` file:
 
@@ -83,30 +154,4 @@ In order to test that predict works on a test set you created run:
 ```bash
 python modeling/predict.py models/linear data/X_test.csv data/y_test.csv
 ```
-
-## About MLFLOW -- delete this when using the template
-
-MLFlow is a tool for tracking ML experiments. You can run it locally or remotely. It stores all the information about experiments in a database.
-And you can see the overview via the GUI or access it via APIs. Sending data to mlflow is done via APIs. And with mlflow you can also store models on S3 where you version them and tag them as production for serving them in production.
-![mlflow workflow](images/0_general_tracking_mlflow.png)
-
-### MLFlow GUI
-
-You can group model trainings in experiments. The granularity of what an experiment is up to your usecase. Recommended is to have an experiment per data product, as for all the runs in an experiment you can compare the results.
-![gui](images/1_gui.png)
-
-### Code to send data to MLFlow
-
-In order to send data about your model you need to set the connection information, via the tracking uri and also the experiment name (otherwise the default one is used). One run represents a model, and all the rest is metadata. For example if you want to save train MSE, test MSE and validation MSE you need to name them as 3 different metrics.
-If you are doing CV you can set the tracking as nested.
-![mlflow code](images/2_code.png)
-
-### MLFlow metadata
-
-There is no constraint between runs to have the same metadata tracked. I.e. for one run you can track different tags, different metrics, and different parameters (in cv some parameters might not exist for some runs so this .. makes sense to be flexible).
-
-- tags can be anything you want.. like if you do CV you might want to tag the best model as "best"
-- params are perfect for hypermeters and also for information about the data pipeline you use, if you scaling vs normalization and so on
-- metrics.. should be numeric values as these can get plotted
-
-![mlflow metadata](images/3_metadata.png)
+-->
