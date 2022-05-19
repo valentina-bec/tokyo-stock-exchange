@@ -49,7 +49,8 @@ files : <br>
 ## Models
 
 ### VAR
-
+- VAR: [ann_model](modeling/VAR.ipynb) <br>
+- VAR2 - Grid search:    [ann_predict](modeling/VAR2.ipynb) <br>
 
 ### ARIMA
 
